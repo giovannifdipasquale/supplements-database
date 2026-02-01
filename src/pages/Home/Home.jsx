@@ -1,8 +1,15 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import Table from 'src/components/Table/Table'
+import supplements from "public/supplements.json"
 
 function Home() {
+  useEffect(() => {
+    console.log(typeof supplements)
+  }, [])
   return (
-    <div>Home</div>
+    <div>
+      <Table supplements={supplements} />
+    </div>
   )
 }
 
