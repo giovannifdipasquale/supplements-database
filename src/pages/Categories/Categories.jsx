@@ -1,20 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import supplements from "public/supplements.json";
 import categoriesMapping from "public/categoriesMapping.json";
+import { motion } from 'motion/react';
+import Table from 'src/components/Table/Table'
 
 function Categories() {
   const supplementsCategories = [...new Set(supplements.map(supplement => supplement.category))];
-
+  const [category, setCategory] = useState(null);
   return (
     <div className="max-w-7xl mx-auto">
       <h1 className="text-4xl font-bold text-center text-dark mb-12">
         Explore <span className="text-purple-400">Categories</span>
       </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
         {supplementsCategories.map((category, index) => (
           <div
             key={index}
+            onClick={() => setCategory(category)}
             className={`group relative ${categoriesMapping[category].bg} rounded-2xl p-8 border border-gray-700 hover:border-purple-500 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-2 cursor-pointer flex flex-col items-center justify-center h-48`}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
@@ -28,7 +31,12 @@ function Categories() {
             </h3>
           </div>
         ))}
+
       </div>
+
+      {category != null && (
+        <Table supplements={supplements} category={category} />
+      )}
     </div>
   );
 }
