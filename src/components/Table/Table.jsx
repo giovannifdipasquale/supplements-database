@@ -24,7 +24,7 @@ function Table({ supplements }) {
               <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'name' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
                 Name
                 {
-                  (sortOrder === 'asc' && sortBy === 'name') ? <i class="bi bi-caret-down-fill"></i> : <i class="bi bi-caret-up-fill"></i>
+                  (sortOrder === 'asc' && sortBy === 'name') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
                 }
               </p>
             </th>
@@ -33,7 +33,7 @@ function Table({ supplements }) {
               <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'category' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
                 Category
                 {
-                  (sortOrder === 'asc' && sortBy === 'category') ? <i class="bi bi-caret-down-fill"></i> : <i class="bi bi-caret-up-fill"></i>
+                  (sortOrder === 'asc' && sortBy === 'category') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
                 }
               </p>
             </th>
@@ -42,7 +42,7 @@ function Table({ supplements }) {
               <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'evidenceLevel' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
                 Evidence Level
                 {
-                  (sortOrder === 'asc' && sortBy === 'evidenceLevel') ? <i class="bi bi-caret-down-fill"></i> : <i class="bi bi-caret-up-fill"></i>
+                  (sortOrder === 'asc' && sortBy === 'evidenceLevel') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
                 }
               </p>
             </th>
