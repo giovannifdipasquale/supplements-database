@@ -8,7 +8,7 @@ function Categories() {
   const supplementsCategories = [...new Set(supplements.map(supplement => supplement.category))];
   const [category, setCategory] = useState(null);
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className={`max-w-7xl min-h-screen mx-auto ${category ? 'pb-[40vh]' : ''}`}>
       <h1 className="text-4xl font-bold text-center text-dark mb-12">
         Explore <span className="text-purple-400">Categories</span>
       </h1>
@@ -35,7 +35,7 @@ function Categories() {
       </div>
 
       {category != null && (
-        <Table supplements={supplements} category={category} />
+        <Table key={category} supplements={supplements} category={category} />
       )}
     </div>
   );

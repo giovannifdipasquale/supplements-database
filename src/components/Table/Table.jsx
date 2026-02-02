@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion } from 'motion/react';
+import categoriesMapping from "public/categoriesMapping.json";
 
 function Table({ supplements, category = null }) {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-
+  const [selectedCategory, setSelectedCategory] = useState(null);
   let sortedSupplements = [...supplements].sort((a, b) => {
     if (sortOrder === 'asc') {
       return a[sortBy].localeCompare(b[sortBy]);
@@ -13,19 +14,24 @@ function Table({ supplements, category = null }) {
     }
   });
   if (category != null) {
+
     sortedSupplements = sortedSupplements.filter(supplement => supplement.category === category);
+    if (category == selectedCategory) {
+      setSelectedCategory(category);
+    }
   }
   const sortSupplements = (supplementsKey) => {
     setSortBy(supplementsKey);
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   }
   if (category != null) {
+
     return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: -40 }} transition={{ duration: 0.5 }} ease="easeInOut" className="fixed z-99 top-2/3 left-0 w-full h-full overflow-scroll bg-white shadow-md rounded-lg bg-clip-border">
-        <table className="w-full text-left table-auto min-w-max">
+      <motion.div initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: -40 }} transition={{ duration: 0.2 }} ease="easeInOut" className={`fixed z-99 top-2/3 left-0 w-full h-full overflow-scroll shadow-md rounded-lg bg-clip-border ${categoriesMapping[category].bg}`}>
+        <table className="w-full text-left table-auto min-w-max ">
           <thead>
             <tr>
-              <th onClick={() => sortSupplements('name')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-slate-50 hover:bg-slate-100">
+              <th onClick={() => sortSupplements('name')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
                 <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'name' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
                   Name
                   {
@@ -34,7 +40,7 @@ function Table({ supplements, category = null }) {
                 </p>
               </th>
 
-              <th onClick={() => sortSupplements('evidenceLevel')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-slate-50 hover:bg-slate-100">
+              <th onClick={() => sortSupplements('evidenceLevel')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
                 <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'evidenceLevel' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
                   Evidence Level
                   {
@@ -43,7 +49,7 @@ function Table({ supplements, category = null }) {
                 </p>
               </th>
 
-              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-slate-50 hover:bg-slate-100">
+              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
                 <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
                   Tags
                 </p>
@@ -52,7 +58,7 @@ function Table({ supplements, category = null }) {
           </thead>
           <tbody>
             {sortedSupplements.map((supplement) => (
-              <tr key={supplement.id} className="hover:bg-slate-50">
+              <tr key={supplement.id} className="hover:bg-zinc-500">
                 <td className="p-4 border-b border-slate-200">
                   <p className="block text-sm text-slate-800 font-semibold">
                     {supplement.name}
@@ -68,7 +74,7 @@ function Table({ supplements, category = null }) {
                     {supplement.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
+                        className="bg-zinc-500 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
                       >
                         {tag}
                       </span>
@@ -88,7 +94,7 @@ function Table({ supplements, category = null }) {
         <table className="w-full text-left table-auto min-w-max">
           <thead>
             <tr>
-              <th onClick={() => sortSupplements('name')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-slate-50 hover:bg-slate-100">
+              <th onClick={() => sortSupplements('name')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
                 <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'name' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
                   Name
                   {
@@ -97,7 +103,7 @@ function Table({ supplements, category = null }) {
                 </p>
               </th>
 
-              <th onClick={() => sortSupplements('category')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-slate-50 hover:bg-slate-100">
+              <th onClick={() => sortSupplements('category')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
                 <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'category' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
                   Category
                   {
@@ -106,7 +112,7 @@ function Table({ supplements, category = null }) {
                 </p>
               </th>
 
-              <th onClick={() => sortSupplements('evidenceLevel')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-slate-50 hover:bg-slate-100">
+              <th onClick={() => sortSupplements('evidenceLevel')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
                 <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'evidenceLevel' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
                   Evidence Level
                   {
@@ -115,7 +121,7 @@ function Table({ supplements, category = null }) {
                 </p>
               </th>
 
-              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-slate-50 hover:bg-slate-100">
+              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
                 <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
                   Tags
                 </p>
@@ -124,7 +130,7 @@ function Table({ supplements, category = null }) {
           </thead>
           <tbody>
             {sortedSupplements.map((supplement) => (
-              <tr key={supplement.id} className="hover:bg-slate-50">
+              <tr key={supplement.id} className="hover:bg-zinc-500">
                 <td className="p-4 border-b border-slate-200">
                   <p className="block text-sm text-slate-800 font-semibold">
                     {supplement.name}
@@ -145,7 +151,7 @@ function Table({ supplements, category = null }) {
                     {supplement.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
+                        className="bg-zinc-500 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
                       >
                         {tag}
                       </span>
