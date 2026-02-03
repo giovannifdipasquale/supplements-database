@@ -1,25 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { motion } from 'motion/react';
 import categoriesMapping from "public/categoriesMapping.json";
+import { MySupplementsContext } from "src/context/MySupplementsContext";
 
-function Table({ supplements, category = null }) {
+
+function Table({ supplements = [], category = null }) {
+  const { addSupplement, removeSupplement, isAdded } = useContext(MySupplementsContext);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  let sortedSupplements = [...supplements].sort((a, b) => {
-    if (sortOrder === 'asc') {
-      return a[sortBy].localeCompare(b[sortBy]);
-    } else {
-      return b[sortBy].localeCompare(a[sortBy]);
-    }
-  });
-  if (category != null) {
 
-    sortedSupplements = sortedSupplements.filter(supplement => supplement.category === category);
-    if (category == selectedCategory) {
-      setSelectedCategory(category);
-    }
+  if (!Array.isArray(supplements)) {
+    return <div>No supplements data available.</div>;
   }
+
+  // Filter
+  let filteredSupplements = category
+    ? supplements.filter(s => s.category === category)
+    : supplements;
+
+  // Sort
+  const sortedSupplements = [...filteredSupplements].sort((a, b) => {
+    const valA = a[sortBy]?.toString() || "";
+    const valB = b[sortBy]?.toString() || "";
+
+    return sortOrder === 'asc'
+      ? valA.localeCompare(valB)
+      : valB.localeCompare(valA);
+  });
   const sortSupplements = (supplementsKey) => {
     setSortBy(supplementsKey);
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -54,6 +61,11 @@ function Table({ supplements, category = null }) {
                   Tags
                 </p>
               </th>
+              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
+                <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
+                  Add
+                </p>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -81,7 +93,23 @@ function Table({ supplements, category = null }) {
                     ))}
                   </div>
                 </td>
-              </tr>
+                <td className="p-4 border-b border-slate-200">
+                  {isAdded(supplement.id) ? (
+                    <button
+                      onClick={() => removeSupplement(supplement.id)}
+                      className="cursor-pointer text-xs font-medium px-2.5 py-0.5 rounded"
+                    >
+                      <i className="bi bi-dash-circle text-xl"></i>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => addSupplement(supplement.id)}
+                      className="cursor-pointer text-xs font-medium px-2.5 py-0.5 rounded"
+                    >
+                      <i className="bi bi-plus-circle text-xl"></i>
+                    </button>
+                  )}
+                </td>              </tr>
             ))}
           </tbody>
         </table>
@@ -126,6 +154,11 @@ function Table({ supplements, category = null }) {
                   Tags
                 </p>
               </th>
+              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
+                <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
+                  Add
+                </p>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -157,6 +190,23 @@ function Table({ supplements, category = null }) {
                       </span>
                     ))}
                   </div>
+                </td>
+                <td className="p-4 border-b border-slate-200">
+                  {isAdded(supplement.id) ? (
+                    <button
+                      onClick={() => removeSupplement(supplement.id)}
+                      className="cursor-pointer text-xs font-medium px-2.5 py-0.5 rounded"
+                    >
+                      <i className="bi bi-dash-circle text-xl"></i>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => addSupplement(supplement.id)}
+                      className="cursor-pointer text-xs font-medium px-2.5 py-0.5 rounded"
+                    >
+                      <i className="bi bi-plus-circle text-xl"></i>
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

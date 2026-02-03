@@ -5,10 +5,11 @@ import Home from "src/pages/Home/Home";
 import Categories from "src/pages/Categories/Categories";
 import MyList from "src/pages/MyList/MyList";
 import { BrowserRouter, Route, Routes } from "react-router";
+import { MySupplementsProvider } from "./context/MySupplementsContext";
 
 function App() {
   return (
-    <div>
+    <MySupplementsProvider>
       <Navbar />
       <BrowserRouter>
         <Routes>
@@ -17,7 +18,7 @@ function App() {
           <Route path="/my-list" element={<MyList />} />
         </Routes>
       </BrowserRouter>
-    </div>
+    </MySupplementsProvider>
   );
 }
 
