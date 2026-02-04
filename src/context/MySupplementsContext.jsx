@@ -1,5 +1,6 @@
 import { useState, createContext, useEffect } from 'react';
-
+import supplements from 'public/supplements.json';
+import { toast } from 'sonner';
 export const MySupplementsContext = createContext();
 
 export const MySupplementsProvider = ({ children }) => {
@@ -21,6 +22,7 @@ export const MySupplementsProvider = ({ children }) => {
     const addSupplement = (id) => {
         if (!mySupplements.includes(id)) {
             setMySupplements(prev => [...prev, id]);
+            toast.success("Supplement added to your list!");
         }
     };
 

@@ -1,8 +1,9 @@
 import React from 'react'
+import Table from 'src/components/Table/Table'
 
 function MyList() {
   return (
-    <div>MyList</div>
+    <Table />
   )
 }
 

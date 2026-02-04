@@ -15,7 +15,7 @@ function Navbar() {
                   href="/"
                   className={`rounded-md px-3 py-2 text-sm font-medium ${location.pathname === "/" ? "bg-gray-950/50 text-white" : "text-gray-300 hover:bg-white/5 hover:text-white"}`}
                 >
-                  List
+                  Db
                 </a>
                 <a
                   href="/categories"
@@ -27,12 +27,12 @@ function Navbar() {
             </div>
           </div>
           <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-            <button
-              type="button"
-              className="relative rounded-full p-1 text-gray-400 hover:text-white focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-indigo-500"
+            <a
+              href="/my-list"
+              className={`rounded-md px-3 py-2 text-sm font-medium ${location.pathname === "/my-supplements" ? "bg-gray-950/50 text-white" : "text-gray-300 hover:bg-white/5 hover:text-white"}`}
             >
-              <i className="bi bi-person-circle text-2xl"></i>
-            </button>
+              My Supplements
+            </a>
           </div>
         </div>
       </div>

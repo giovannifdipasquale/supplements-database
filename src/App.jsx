@@ -6,10 +6,12 @@ import Categories from "src/pages/Categories/Categories";
 import MyList from "src/pages/MyList/MyList";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { MySupplementsProvider } from "./context/MySupplementsContext";
+import { Toaster } from "sonner";
 
 function App() {
   return (
     <MySupplementsProvider>
+      <Toaster richColors position="top-center" />
       <Navbar />
       <BrowserRouter>
         <Routes>
