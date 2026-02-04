@@ -28,6 +28,14 @@ export const MySupplementsProvider = ({ children }) => {
 
     const removeSupplement = (id) => {
         setMySupplements(prev => prev.filter(itemId => itemId !== id));
+        toast('Supplement removed from your list', {
+            action: {
+                label: 'Undo',
+                onClick: () => {
+                    addSupplement(id);
+                }
+            },
+        })
     };
 
     const isAdded = (id) => mySupplements.includes(id);
