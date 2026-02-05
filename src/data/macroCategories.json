@@ -1,0 +1,75 @@
+[
+    {
+        "name": "Performance & Energy",
+        "description": "Explosive power, endurance, and metabolic support.",
+        "icon": "bi-lightning-charge-fill",
+        "bg": "bg-orange-100",
+        "text": "text-orange-700",
+        "iconClass": "bi-lightning-charge-fill",
+        "subCategories": [
+            "Physical Performance",
+            "Stimulants",
+            "Energy",
+            "Fat Loss"
+        ]
+    },
+    {
+        "name": "Brain & Focus",
+        "description": "Cognitive enhancement, stress management, and mental clarity.",
+        "icon": "bi-cpu-fill",
+        "bg": "bg-violet-100",
+        "text": "text-violet-700",
+        "iconClass": "bi-cpu-fill",
+        "subCategories": [
+            "Nootropics",
+            "Adaptogens",
+            "Mood",
+            "Stress/Cognition",
+            "Mood/Sleep"
+        ]
+    },
+    {
+        "name": "Vitality & Health",
+        "description": "Core nutrients for long-term health and hormonal balance.",
+        "icon": "bi-heart-pulse-fill",
+        "bg": "bg-lime-100",
+        "text": "text-lime-700",
+        "iconClass": "bi-heart-pulse-fill",
+        "subCategories": [
+            "Vitamins",
+            "Minerals",
+            "General Health",
+            "Superfoods",
+            "Heart Health",
+            "Men's Health",
+            "Hormones"
+        ]
+    },
+    {
+        "name": "Recovery & Gut",
+        "description": "Restore your body and optimize nutrient absorption.",
+        "icon": "bi-shield-check",
+        "bg": "bg-teal-100",
+        "text": "text-teal-700",
+        "iconClass": "bi-shield-check",
+        "subCategories": [
+            "Sleep",
+            "Gut Health",
+            "Digestion",
+            "Recovery"
+        ]
+    },
+    {
+        "name": "Aesthetics & Structural",
+        "description": "Joint integrity, skin health, and structural support.",
+        "icon": "bi-magic",
+        "bg": "bg-pink-100",
+        "text": "text-pink-600",
+        "iconClass": "bi-magic",
+        "subCategories": [
+            "Beauty",
+            "Joints",
+            "Beauty/Joints"
+        ]
+    }
+]

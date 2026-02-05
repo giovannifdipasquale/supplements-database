@@ -1,32 +1,51 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { motion } from 'motion/react';
 import categoriesMapping from "public/categoriesMapping.json";
 import { MySupplementsContext } from "src/context/MySupplementsContext";
-
+import Fuse from 'fuse.js';
 
 function Table({ supplements = [], category = null }) {
   const { addSupplement, removeSupplement, isAdded } = useContext(MySupplementsContext);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
-
+  const [query, setQuery] = useState('');
   if (!Array.isArray(supplements)) {
     return <div>No supplements data available.</div>;
   }
 
-  // Filter
-  let filteredSupplements = category
-    ? supplements.filter(s => s.category === category)
-    : supplements;
+  // 1. Filter
+  const filteredSupplements = useMemo(() => {
+    return category
+      ? supplements.filter(s => s.category === category)
+      : supplements;
+  }, [category, supplements]);
 
-  // Sort
-  const sortedSupplements = [...filteredSupplements].sort((a, b) => {
-    const valA = a[sortBy]?.toString() || "";
-    const valB = b[sortBy]?.toString() || "";
+  // 2. Fuse.js Search
+  const searchOptions = useMemo(() => ({
+    keys: ['tags', 'name'],
+    threshold: 0.3,
+  }), []);
 
-    return sortOrder === 'asc'
-      ? valA.localeCompare(valB)
-      : valB.localeCompare(valA);
-  });
+  const fuse = useMemo(() => new Fuse(filteredSupplements, searchOptions), [filteredSupplements, searchOptions]);
+
+  const searchResults = useMemo(() => {
+    return query
+      ? fuse.search(query).map(result => result.item)
+      : filteredSupplements;
+  }, [query, fuse, filteredSupplements]);
+
+  // 3. Sort
+  const results = useMemo(() => {
+    return [...searchResults].sort((a, b) => {
+      const valA = a[sortBy]?.toString() || "";
+      const valB = b[sortBy]?.toString() || "";
+
+      return sortOrder === 'asc'
+        ? valA.localeCompare(valB)
+        : valB.localeCompare(valA);
+    });
+  }, [searchResults, sortBy, sortOrder]);
+
   const sortSupplements = (supplementsKey) => {
     setSortBy(supplementsKey);
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -35,6 +54,13 @@ function Table({ supplements = [], category = null }) {
 
     return (
       <motion.div initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: -40 }} transition={{ duration: 0.2 }} ease="easeInOut" className={`fixed z-99 top-2/3 left-0 w-full h-full overflow-scroll shadow-md rounded-lg bg-clip-border ${categoriesMapping[category].bg}`}>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search supplements..."
+          className="w-full p-2 border-b border-gray-200 focus:outline-none focus:border-blue-500"
+        />
         <table className="w-full text-left table-auto min-w-max ">
           <thead>
             <tr>
@@ -69,7 +95,7 @@ function Table({ supplements = [], category = null }) {
             </tr>
           </thead>
           <tbody>
-            {sortedSupplements.map((supplement) => (
+            {results.map((supplement) => (
               <tr key={supplement.id} className="hover:bg-zinc-500">
                 <td className="p-4 border-b border-slate-200">
                   <p className="block text-sm text-slate-800 font-semibold">
@@ -119,6 +145,15 @@ function Table({ supplements = [], category = null }) {
   else {
     return (
       <div className="relative flex flex-col w-full h-full overflow-scroll bg-white shadow-md rounded-lg bg-clip-border">
+        <div className="p-4 bg-white border-b border-gray-100">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search supplements..."
+            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
         <table className="w-full text-left table-auto min-w-max">
           <thead>
             <tr>
@@ -162,7 +197,7 @@ function Table({ supplements = [], category = null }) {
             </tr>
           </thead>
           <tbody>
-            {sortedSupplements.map((supplement) => (
+            {results.map((supplement) => (
               <tr key={supplement.id} className="hover:bg-zinc-500">
                 <td className="p-4 border-b border-slate-200">
                   <p className="block text-sm text-slate-800 font-semibold">
