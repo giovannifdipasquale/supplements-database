@@ -4,6 +4,7 @@ import Navbar from './components/Navbar/Navbar'
 import Home from "src/pages/Home/Home";
 import Categories from "src/pages/Categories/Categories";
 import MyList from "src/pages/MyList/MyList";
+import Supplement from "src/pages/Supplement/Supplement";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { MySupplementsProvider } from "./context/MySupplementsContext";
 import { Toaster } from "sonner";
@@ -18,6 +19,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/my-list" element={<MyList />} />
+          <Route path="/supplement/:id" element={<Supplement />} />
         </Routes>
       </BrowserRouter>
     </MySupplementsProvider>

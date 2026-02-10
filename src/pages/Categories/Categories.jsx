@@ -9,17 +9,18 @@ function Categories() {
   // const supplementsCategories = [...new Set(supplements.map(supplement => supplement.category))];
   const [category, setCategory] = useState(null);
   return (
-    <div className={`max-w-7xl min-h-screen mx-auto ${category ? 'pb-[40vh]' : ''}`}>
-      <h1 className="text-4xl font-bold text-center text-dark mb-12">
-        Explore <span className="text-purple-400">Categories</span>
+    <div className={`max-w-7xl min-h-screen`}>
+      <h1 className="md:text-6xl text-4xl font-bold text-center text-dark p-10">
+        <i className="bi bi-microsoft px-8 text-zinc-600 text-shadow-teal"></i>
+        <span className="text-shadow-teal text-plum">Categories</span>
       </h1>
 
-      <div className="space-y-16">
+      <div className="space-y-16 mx-5">
         {macroCategories.map((macro, macroIndex) => (
           <div key={macroIndex} className="animate-fade-in-up">
             {/* Macro Header */}
             <div className="flex items-center gap-4 mb-6 border-b border-gray-200 pb-4">
-              <div className={`p-3 rounded-lg ${macro.bg} ${macro.text}`}>
+              <div className={`p-3 w-13 h-13 flex items-center justify-center rounded-lg bg-plum-transparent text-plum text-shadow-teal`}>
                 <i className={`${macro.iconClass} text-2xl`}></i>
               </div>
               <div>
@@ -36,13 +37,13 @@ function Categories() {
 
                 return (
                   <motion.div
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                     key={index}
                     onClick={() => setCategory(sub)}
                     className={`
                       relative group cursor-pointer rounded-xl p-5 border 
-                      transition-all duration-300 flex flex-col items-center justify-center h-40
+                      transition-all duration-150 flex flex-col items-center justify-center h-40
                       ${isSelected
                         ? 'ring-2 ring-indigo-500 shadow-lg bg-white border-transparent'
                         : 'border-slate-100 bg-white hover:shadow-md hover:border-indigo-200'}
@@ -67,7 +68,7 @@ function Categories() {
       </div>
 
       {category != null && (
-        <Table key={category} supplements={supplements} category={category} />
+        <Table key={category} supplements={supplements} category={category} onClose={() => setCategory(null)} />
       )}
     </div>
   );

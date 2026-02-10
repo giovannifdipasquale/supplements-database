@@ -1,40 +1,100 @@
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import { motion } from 'motion/react';
+import jsonSupplements from "public/supplements.json";
 import categoriesMapping from "public/categoriesMapping.json";
 import { MySupplementsContext } from "src/context/MySupplementsContext";
+import EvidenceBadge from "src/components/EvidenceBadge/EvidenceBadge";
 import Fuse from 'fuse.js';
+import { Link } from 'react-router';
 
-function Table({ supplements = [], category = null }) {
-  const { addSupplement, removeSupplement, isAdded } = useContext(MySupplementsContext);
+function Table({ supplements = [], category = null, onClose = null }) {
+  const { mySupplements, addSupplement, removeSupplement, isAdded } = useContext(MySupplementsContext);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [query, setQuery] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
   if (!Array.isArray(supplements)) {
     return <div>No supplements data available.</div>;
   }
 
-  // 1. Filter
-  const filteredSupplements = useMemo(() => {
-    return category
-      ? supplements.filter(s => s.category === category)
-      : supplements;
-  }, [category, supplements]);
+  // #############################################
+  // FILTERING STEPS START
+  // #############################################
 
-  // 2. Fuse.js Search
+  // ---------------------------------------------
+  // STEP 1: Filter State Configuration
+  // ---------------------------------------------
+  const [filterByCategory, setFilterByCategory] = useState([]);
+  const [filterByEvidenceLevel, setFilterByEvidenceLevel] = useState([]);
+  const [filterByMySupplements, setFilterByMySupplements] = useState(false);
+
+  // Helper to add / remove filters
+  const toggleFilter = (filter, setFilter) => {
+    setFilter(elements => elements.includes(filter) ? elements.filter(f => f !== filter) : [...elements, filter]);
+  }
+  let filteredSupplements = useMemo(() => {
+    console.log(filterByMySupplements);
+    console.log(mySupplements);
+    return filterByMySupplements ? supplements.filter(s => mySupplements.includes(s.id)) : supplements;
+  }, [filterByMySupplements, mySupplements]);
+
+  // ---------------------------------------------
+  // STEP 2: Extract Unique Keys for Filter UI
+  // ---------------------------------------------
+  // 2a. Unique Categories:
+  const singleCategories = [...new Set(jsonSupplements.map(s => s.category))];
+  // 2b. Unique Evidence Levels:
+  const singleEvidenceLevels = [...new Set(jsonSupplements.map(s => s.evidenceLevel))];
+
+  // ---------------------------------------------
+  // STEP 3: Apply Sidebar Filters (Category & Evidence)
+  // ---------------------------------------------
+  const filterSupplements = useMemo(() => {
+    // Filter by Category
+    if (filterByCategory.length > 0) {
+      filteredSupplements = filterByCategory ? filteredSupplements.filter(s => filterByCategory.includes(s.category)) : filteredSupplements;
+    }
+    // Filter by Evidence Level
+    if (filterByEvidenceLevel.length > 0) {
+      filteredSupplements = filterByEvidenceLevel ? filteredSupplements.filter(s => filterByEvidenceLevel.includes(s.evidenceLevel)) : filteredSupplements;
+      console.log(filterByEvidenceLevel);
+    }
+    return filteredSupplements;
+  }, [filteredSupplements, filterByCategory, filterByEvidenceLevel, supplements]);
+
+  // #############################################
+  // FILTERING STEPS CONTINUES
+  // #############################################
+
+
+  // ---------------------------------------------
+  // STEP 4: Apply Prop-based Category Filter (If Any)
+  // ---------------------------------------------
+  const catFilteredSupplements = useMemo(() => {
+    return category
+      ? filterSupplements.filter(s => s.category === category)
+      : filterSupplements;
+  }, [category, filterSupplements]);
+
+  // ---------------------------------------------
+  // STEP 5: Apply Text Search (Fuse.js)
+  // ---------------------------------------------
   const searchOptions = useMemo(() => ({
-    keys: ['tags', 'name'],
-    threshold: 0.3,
+    keys: ['tags', 'name', 'category'],
+    threshold: 0,
   }), []);
 
-  const fuse = useMemo(() => new Fuse(filteredSupplements, searchOptions), [filteredSupplements, searchOptions]);
+  const fuse = useMemo(() => new Fuse(catFilteredSupplements, searchOptions), [catFilteredSupplements, searchOptions]);
 
   const searchResults = useMemo(() => {
     return query
       ? fuse.search(query).map(result => result.item)
-      : filteredSupplements;
-  }, [query, fuse, filteredSupplements]);
+      : catFilteredSupplements;
+  }, [query, fuse, catFilteredSupplements]);
 
-  // 3. Sort
+  // ---------------------------------------------
+  // STEP 6: Apply Sorting
+  // ---------------------------------------------
   const results = useMemo(() => {
     return [...searchResults].sort((a, b) => {
       const valA = a[sortBy]?.toString() || "";
@@ -50,203 +110,521 @@ function Table({ supplements = [], category = null }) {
     setSortBy(supplementsKey);
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   }
+
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   if (category != null) {
+    const catData = categoriesMapping[category] || categoriesMapping.default;
 
     return (
-      <motion.div initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: -40 }} transition={{ duration: 0.2 }} ease="easeInOut" className={`fixed z-99 top-2/3 left-0 w-full h-full overflow-scroll shadow-md rounded-lg bg-clip-border ${categoriesMapping[category].bg}`}>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search supplements..."
-          className="w-full p-2 border-b border-gray-200 focus:outline-none focus:border-blue-500"
+      // ANIMATED TABLE (FROM CATEGORIES)
+      <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/40 backdrop-blur-md z-98 cursor-pointer"
         />
-        <table className="w-full text-left table-auto min-w-max ">
-          <thead>
-            <tr>
-              <th onClick={() => sortSupplements('name')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'name' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
-                  Name
-                  {
-                    (sortOrder === 'asc' && sortBy === 'name') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
-                  }
-                </p>
-              </th>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
+          animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
+          transition={{ duration: 0.3 }}
+          className={`hidden md:block p-6 border-2 border-zinc-500 rounded-2xl ${catData.bg} z-99 fixed top-1/2 left-1/2 w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl bg-clip-border`}
+        >
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/5 transition-colors cursor-pointer group"
+          >
+            <i className="bi bi-x-lg text-2xl text-slate-600 group-hover:text-slate-900"></i>
+          </button>
+          <div className="">
+            <div className="text-center">
+              <span className={`category-pill inline-flex items-center rounded-md px-2 py-1 text-lg font-medium ring-1 ring-inset ring-black/10 ${catData.bg} ${catData.text}`}>
+                <i className={`bi ${catData.iconClass} me-2`}></i> {category}
+              </span>
+            </div>
+            <div className="grid grid-cols-12 p-3">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search supplements..."
+                className="col-span-12 w-full p-2 border-b border-gray-200 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+            <table className="w-full hidden md:table text-left table-auto min-w-max">
+              <thead>
+                <tr>
+                  <th onClick={() => sortSupplements('name')} className=" p-4 transition-colors cursor-pointer border-b border-slate-300 hover:bg-slate-100">
+                    <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'name' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
+                      Name
+                      {
+                        (sortOrder === 'asc' && sortBy === 'name') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
+                      }
+                    </p>
+                  </th>
 
-              <th onClick={() => sortSupplements('evidenceLevel')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'evidenceLevel' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
-                  Evidence Level
-                  {
-                    (sortOrder === 'asc' && sortBy === 'evidenceLevel') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
-                  }
-                </p>
-              </th>
+                  <th onClick={() => sortSupplements('category')} className=" p-4 transition-colors cursor-pointer border-b border-slate-300 hover:bg-slate-100">
+                    <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'category' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
+                      Category
+                      {
+                        (sortOrder === 'asc' && sortBy === 'category') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
+                      }
+                    </p>
+                  </th>
 
-              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
-                  Tags
-                </p>
-              </th>
-              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
-                  Add
-                </p>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((supplement) => (
-              <tr key={supplement.id} className="hover:bg-zinc-500">
-                <td className="p-4 border-b border-slate-200">
-                  <p className="block text-sm text-slate-800 font-semibold">
-                    {supplement.name}
-                  </p>
-                </td>
-                <td className="p-4 border-b border-slate-200">
-                  <p className="block text-sm text-slate-800">
-                    {supplement.evidenceLevel}
-                  </p>
-                </td>
-                <td className="p-4 border-b border-slate-200">
-                  <div className="flex flex-wrap gap-2">
-                    {supplement.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="bg-zinc-500 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
-                      >
+                  <th onClick={() => sortSupplements('evidenceLevel')} className=" p-4 transition-colors cursor-pointer border-b border-slate-300 hover:bg-slate-100">
+                    <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'evidenceLevel' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
+                      Evidence Level
+                      {
+                        (sortOrder === 'asc' && sortBy === 'evidenceLevel') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
+                      }
+                    </p>
+                  </th>
+                  <th className="w-30 p-4 transition-colors cursor-pointer border-b border-slate-300 hover:bg-slate-100">
+                    <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
+                      My Stack
+                    </p>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((supplement) => {
+                  const catData = categoriesMapping[supplement.category] || categoriesMapping.default;
+                  return isAdded(supplement.id) ? (
+                    <tr key={supplement.id} className="table-body-row cursor-pointer hover:bg-zinc-50 transition duration-300 ease-in-out">
+                      <td className="p-4 border-b border-slate-200 second-td">
+                        <p className="block text-sm text-slate-800 font-semibold">
+                          <Link className="" to={`/supplement/${supplement.id}`}>
+                            {supplement.name}
+                          </Link>
+                        </p>
+                      </td>
+                      <td className="p-4 border-b border-slate-200">
+                        <div className="text-left">
+                          <span className={`inline-flex items-center rounded-md px-2 py-1 text-sm font-medium ring-1 ring-inset ring-black/10 ${catData.bg} ${catData.text}`}>
+                            <i className={`bi ${catData.iconClass} me-2`}></i> {supplement.category}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 border-b border-slate-200 fourth-td">
+                        <div className="block text-sm text-slate-800">
+                          <EvidenceBadge evidenceLevel={supplement.evidenceLevel} />
+                        </div>
+                      </td>
+                      <td className="p-4 border-b border-slate-200 fifth-td">
+                        <div className="pointer-cursor flex text-xl items-center justify-center">
+                          <i onClick={() => removeSupplement(supplement.id)} className="bi bi-check-circle-fill text-teal-500"></i>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={supplement.id} className="table-body-row cursor-pointer hover:bg-plum transition duration-300 ease-in-out">
+                      <td className="p-4 border-b border-slate-200 second-td">
+                        <p className="block text-sm text-slate-800 font-semibold">
+                          <Link className="" to={`/supplement/${supplement.id}`}>
+                            {supplement.name}
+                          </Link>
+                        </p>
+                      </td>
+                      <td className="p-4 border-b border-slate-200">
+                        <div className="text-left">
+                          <span className={`inline-flex items-center rounded-md px-2 py-1 text-sm font-medium ring-1 ring-inset ring-black/10 ${catData.bg} ${catData.text}`}>
+                            <i className={`bi ${catData.iconClass} me-2`}></i> {supplement.category}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 border-b border-slate-200 fourth-td">
+                        <div className="block text-sm text-slate-800">
+                          <EvidenceBadge evidenceLevel={supplement.evidenceLevel} />
+                        </div>
+                      </td>
+                      <td className="p-4 border-b border-slate-200 fifth-td">
+                        <div className="pointer-cursor flex text-xl items-center justify-center">
+                          <i className="bi bi-circle text-teal-500"></i>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
+          animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
+          transition={{ duration: 0.3 }}
+          className={`block md:hidden p-6 border-2 border-zinc-500 rounded-2xl ${catData.bg} z-99 fixed top-1/2 left-1/2 w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl bg-clip-border`}
+        >
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-black/5 transition-colors cursor-pointer group"
+          >
+            <i className="bi bi-x-lg text-2xl text-slate-600 group-hover:text-slate-900"></i>
+          </button>
+          <div className="">
+            <div className="text-center">
+              <span className={`category-pill inline-flex items-center rounded-md px-2 py-1 text-lg font-medium ring-1 ring-inset ring-black/10 ${catData.bg} ${catData.text}`}>
+                <i className={`bi ${catData.iconClass} me-2`}></i> {category}
+              </span>
+            </div>
+            <div className="grid grid-cols-12 p-3">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search supplements..."
+                className="col-span-12 w-full p-2 border-b border-gray-200 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+            <div className="md:hidden">
+              {results.map((supplement) => (
+                <div key={supplement.id} className="bg-white rounded-lg shadow-sm border border-slate-100 mb-4 p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900">{supplement.name}</h3>
+                      <span className="inline-block px-2 py-1 text-xs font-semibold text-plum bg-purple-50 rounded-full mt-1">
+                        {supplement.category}
+                      </span>
+                    </div>
+                    <EvidenceBadge evidenceLevel={supplement.evidenceLevel} />
+                  </div>
+                  <p className="text-gray-600 text-sm mb-3">{supplement.description}</p>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="bg-slate-50 p-2 rounded-lg">
+                      <p className="text-xs text-slate-500">Dosage</p>
+                      <p className="text-sm font-medium">{supplement.dosage}</p>
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded-lg">
+                      <p className="text-xs text-slate-500">Timing</p>
+                      <p className="text-sm font-medium">{supplement.timing}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {supplement.tags.map((tag, index) => (
+                      <span key={index} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-600">
                         {tag}
                       </span>
                     ))}
                   </div>
-                </td>
-                <td className="p-4 border-b border-slate-200">
-                  {isAdded(supplement.id) ? (
-                    <button
-                      onClick={() => removeSupplement(supplement.id)}
-                      className="cursor-pointer text-xs font-medium px-2.5 py-0.5 rounded"
-                    >
-                      <i className="bi bi-dash-circle text-xl"></i>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => addSupplement(supplement.id)}
-                      className="cursor-pointer text-xs font-medium px-2.5 py-0.5 rounded"
-                    >
-                      <i className="bi bi-plus-circle text-xl"></i>
-                    </button>
+                  {supplement.warnings && supplement.warnings.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                      <h4 className="flex items-center text-amber-800 font-semibold mb-2">
+                        <i className="bi bi-exclamation-triangle-fill me-2 text-amber-500"></i> Warnings
+                      </h4>
+                      <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
+                        {supplement.warnings.map((warning, idx) => (
+                          <li key={idx}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
-                </td>              </tr>
-            ))}
-          </tbody>
-        </table>
-      </motion.div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </>
     );
   }
+  // STATIC TABLE
   else {
     return (
-      <div className="relative flex flex-col w-full h-full overflow-scroll bg-white shadow-md rounded-lg bg-clip-border">
-        <div className="p-4 bg-white border-b border-gray-100">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search supplements..."
-            className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      <div className="flex w-full h-full relative overflow-hidden">
+        {/* Sidebar Filter */}
+        <div
+          className={`
+            flex-shrink-0 bg-gray-50 border-r border-gray-200 transition-all duration-300 ease-in-out overflow-y-auto
+            ${showFilter ? "w-72 opacity-100 translate-x-0" : "w-0 opacity-0 -translate-x-4"}
+          `}
+        >
+          <div className="p-4 min-w-72">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Filters</h3>
+              <button
+                onClick={() => setShowFilter(false)}
+                className="p-1 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+
+            {/* Categories Filter */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-[var(--amethyst-smoke)] uppercase tracking-wider">Categories</h4>
+                {(filterByCategory.length > 0) && (
+                  <button
+                    onClick={() => setFilterByCategory([])}
+                    className="text-xs text-[var(--plum)] hover:underline font-medium"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2">
+                {singleCategories.map((category) => (
+                  <label key={category} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white hover:shadow-sm cursor-pointer transition-all group">
+                    <div className="relative flex items-center">
+                      <input
+                        onChange={() => toggleFilter(category, setFilterByCategory)}
+                        checked={filterByCategory.includes(category)}
+                        type="checkbox"
+                        className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-md checked:bg-[var(--plum)] checked:border-[var(--plum)] transition-all cursor-pointer"
+                      />
+                      <i className="bi bi-check absolute text-white text-lg opacity-0 peer-checked:opacity-100 pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                    </div>
+                    <span className={`text-sm text-gray-600 group-hover:text-gray-900 transition-colors ${filterByCategory.includes(category) ? 'font-medium text-gray-900' : ''}`}>
+                      {category}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Evidence Level Filter */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-[var(--amethyst-smoke)] uppercase tracking-wider">Evidence</h4>
+                {(filterByEvidenceLevel.length > 0) && (
+                  <button
+                    onClick={() => setFilterByEvidenceLevel([])}
+                    className="text-xs text-[var(--plum)] hover:underline font-medium"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2">
+                {singleEvidenceLevels.map((evidenceLevel) => (
+                  <label key={evidenceLevel} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white hover:shadow-sm cursor-pointer transition-all group">
+                    <div className="relative flex items-center">
+                      <input
+                        onChange={() => toggleFilter(evidenceLevel, setFilterByEvidenceLevel)}
+                        checked={filterByEvidenceLevel.includes(evidenceLevel)}
+                        type="checkbox"
+                        className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-md checked:bg-[var(--plum)] checked:border-[var(--plum)] transition-all cursor-pointer"
+                      />
+                      <i className="bi bi-check absolute text-white text-lg opacity-0 peer-checked:opacity-100 pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                    </div>
+                    <span className={`text-sm text-gray-600 group-hover:text-gray-900 transition-colors ${filterByEvidenceLevel.includes(evidenceLevel) ? 'font-medium text-gray-900' : ''}`}>
+                      {evidenceLevel}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* My Stack Filter */}
+            <div className="mb-6 border-t border-gray-200 pt-4">
+              <label className="flex items-center gap-3 p-2 rounded-lg hover:bg-purple-50 cursor-pointer transition-all group">
+                <div className="relative flex items-center">
+                  <input
+                    onChange={() => setFilterByMySupplements(!filterByMySupplements)}
+                    checked={filterByMySupplements}
+                    type="checkbox"
+                    className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-md checked:bg-[var(--amethyst-smoke)] checked:border-[var(--amethyst-smoke)] transition-all cursor-pointer"
+                  />
+                  <i className="bi bi-check absolute text-white text-lg opacity-0 peer-checked:opacity-100 pointer-events-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"></i>
+                </div>
+                <span className={`text-sm font-semibold text-[var(--amethyst-smoke)] group-hover:text-[var(--dusty-rose)] transition-colors`}>
+                  My Stack Only
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
-        <table className="w-full text-left table-auto min-w-max">
-          <thead>
-            <tr>
-              <th onClick={() => sortSupplements('name')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'name' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
-                  Name
-                  {
-                    (sortOrder === 'asc' && sortBy === 'name') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
-                  }
-                </p>
-              </th>
 
-              <th onClick={() => sortSupplements('category')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'category' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
-                  Category
-                  {
-                    (sortOrder === 'asc' && sortBy === 'category') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
-                  }
-                </p>
-              </th>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-white-fc relative">
 
-              <th onClick={() => sortSupplements('evidenceLevel')} className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none ${sortBy === 'evidenceLevel' ? 'text-blue-500 font-bold' : 'text-slate-800'}`}>
-                  Evidence Level
-                  {
-                    (sortOrder === 'asc' && sortBy === 'evidenceLevel') ? <i className="bi bi-caret-down-fill"></i> : <i className="bi bi-caret-up-fill"></i>
-                  }
-                </p>
-              </th>
+          {/* Top Bar with Filter Toggle and Search */}
+          <div className="flex items-center gap-4 p-4 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+            <button
+              hidden md:block onClick={() => setShowFilter(!showFilter)}
+              className={`
+                p-2 rounded-md transition-all duration-200 flex items-center gap-2
+                ${showFilter ? 'bg-[var(--plum)] text-white shadow-md' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}
+              `}
+              title="Toggle Filters"
+            >
+              <i className={`bi ${showFilter ? 'bi-funnel-fill' : 'bi-funnel'} text-lg`}></i>
+              <span className="text-sm font-medium hidden sm:inline">Filters</span>
+            </button>
 
-              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
-                  Tags
-                </p>
-              </th>
-              <th className="p-4 transition-colors cursor-pointer border-b border-slate-300 bg-zinc-500 hover:bg-slate-100">
-                <p className={`flex items-center justify-between gap-2 text-sm leading-none`}>
-                  Add
-                </p>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((supplement) => (
-              <tr key={supplement.id} className="hover:bg-zinc-500">
-                <td className="p-4 border-b border-slate-200">
-                  <p className="block text-sm text-slate-800 font-semibold">
-                    {supplement.name}
-                  </p>
-                </td>
-                <td className="p-4 border-b border-slate-200">
-                  <p className="block text-sm text-slate-800">
-                    {supplement.category}
-                  </p>
-                </td>
-                <td className="p-4 border-b border-slate-200">
-                  <p className="block text-sm text-slate-800">
-                    {supplement.evidenceLevel}
-                  </p>
-                </td>
-                <td className="p-4 border-b border-slate-200">
-                  <div className="flex flex-wrap gap-2">
-                    {supplement.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="bg-zinc-500 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded"
-                      >
+            <div className="flex-1 max-w-2xl relative">
+              <i className="bi bi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search supplements..."
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-full text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--plum)]/20 focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Scrollable Table Area */}
+          <div className="flex-1 overflow-auto">
+            <table className="hidden md:table -full text-left border-collapse">
+              <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm shadow-sm">
+                <tr>
+                  <th className="p-4 border-b border-gray-200 w-16"></th> {/* Action column */}
+                  <th onClick={() => sortSupplements('name')} className="p-4 border-b border-gray-200 cursor-pointer group hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider group-hover:text-[var(--plum)]">
+                      Name
+                      {sortBy === 'name' && (
+                        <i className={`bi bi-caret-${sortOrder === 'asc' ? 'down' : 'up'}-fill text-[var(--plum)]`}></i>
+                      )}
+                    </div>
+                  </th>
+                  <th onClick={() => sortSupplements('category')} className="p-4 border-b border-gray-200 cursor-pointer group hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider group-hover:text-[var(--plum)]">
+                      Category
+                      {sortBy === 'category' && (
+                        <i className={`bi bi-caret-${sortOrder === 'asc' ? 'down' : 'up'}-fill text-[var(--plum)]`}></i>
+                      )}
+                    </div>
+                  </th>
+                  <th onClick={() => sortSupplements('evidenceLevel')} className="p-4 border-b border-gray-200 cursor-pointer group hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider group-hover:text-[var(--plum)]">
+                      Evidence
+                      {sortBy === 'evidenceLevel' && (
+                        <i className={`bi bi-caret-${sortOrder === 'asc' ? 'down' : 'up'}-fill text-[var(--plum)]`}></i>
+                      )}
+                    </div>
+                  </th>
+                  <th className="p-4 border-b border-gray-200 w-16"></th> {/* Stack Status */}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+
+                {results.map((supplement) => {
+                  const catData = categoriesMapping[supplement.category] || categoriesMapping.default;
+                  return isAdded(supplement.id) ? (
+                    <tr key={supplement.id} className="table-body-row cursor-pointer hover:bg-zinc-50 transition duration-300 -translate-x-30 ease-in-out">
+                      <td className="p-4 border-b border-slate-200 first-td">
+                        <p className="block text-sm text-slate-800 font-semibold">
+                          <a className="flex items-center justify-center w-20 h-10 rounded-md bg-red-500"> REMOVE </a>
+                        </p>
+                      </td>
+                      <td className="p-4 border-b border-slate-200 second-td">
+                        <p className="block text-sm text-slate-800 font-semibold">
+                          <Link className="" to={`/supplement/${supplement.id}`}>
+                            {supplement.name}
+                          </Link>
+                        </p>
+                      </td>
+                      <td className="p-4 border-b border-slate-200">
+                        <div className="text-left">
+                          <span className={`inline-flex items-center rounded-md px-2 py-1 text-sm font-medium ring-1 ring-inset ring-black/10 ${catData.bg} ${catData.text}`}>
+                            <i className={`bi ${catData.iconClass} me-2`}></i> {supplement.category}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 border-b border-slate-200">
+                        <div className="block text-sm text-slate-800">
+                          <EvidenceBadge evidenceLevel={supplement.evidenceLevel} />
+                        </div>
+                      </td>
+                      <td className="p-4 border-b border-slate-200">
+                        <div className="flex text-xl items-center justify-center">
+                          <i onClick={() => removeSupplement(supplement.id)} className="bi bi-check-circle-fill text-teal-500"></i>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={supplement.id} className="table-body-row cursor-pointer hover:bg-plum transition duration-300 ease-in-out -translate-x-30">
+                      <td className="p-4 border-b border-slate-200 first-td">
+                        <p className="block text-sm text-slate-800 font-semibold">
+                          <a className="flex items-center justify-center w-20 h-10 rounded-md bg-teal-500"> ADD </a>
+                        </p>
+                      </td>
+                      <td className="p-4 border-b border-slate-200 second-td">
+                        <p className="block text-sm text-slate-800 font-semibold">
+                          <Link className="" to={`/supplement/${supplement.id}`}>
+                            {supplement.name}
+                          </Link>
+                        </p>
+                      </td>
+                      <td className="p-4 border-b border-slate-200">
+                        <div className="text-left">
+                          <span className={`inline-flex items-center rounded-md px-2 py-1 text-sm font-medium ring-1 ring-inset ring-black/10 ${catData.bg} ${catData.text}`}>
+                            <i className={`bi ${catData.iconClass} me-2`}></i> {supplement.category}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4 border-b border-slate-200">
+                        <div className="block text-sm text-slate-800">
+                          <EvidenceBadge evidenceLevel={supplement.evidenceLevel} />
+                        </div>
+                      </td>
+                      <td className="p-4 border-b border-slate-200">
+                        <div className="flex text-xl items-center justify-center">
+                          <i onClick={() => addSupplement(supplement.id)} className="bi bi-circle text-teal-500"></i>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="md:hidden mx-5">
+              {results.map((supplement) => (
+                <div key={supplement.id} className="bg-white rounded-lg shadow-sm border border-slate-100 mb-4 p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 my-3">{supplement.name}</h3>
+                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-sm font-medium ring-1 ring-inset ring-black/10 ${categoriesMapping[supplement.category].bg} ${categoriesMapping[supplement.category].text}`}>
+                        <i className={`bi ${categoriesMapping[supplement.category].iconClass} mx-2`}></i> {supplement.category}
+                      </span>
+                    </div>
+                    <EvidenceBadge evidenceLevel={supplement.evidenceLevel} />
+                  </div>
+                  <p className="text-gray-600 text-sm mb-3">{supplement.description}</p>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="bg-slate-50 p-2 rounded-lg">
+                      <p className="text-xs text-slate-500">Dosage</p>
+                      <p className="text-sm font-medium">{supplement.dosage}</p>
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded-lg">
+                      <p className="text-xs text-slate-500">Timing</p>
+                      <p className="text-sm font-medium">{supplement.timing}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {supplement.tags.map((tag, index) => (
+                      <span key={index} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-600">
                         {tag}
                       </span>
                     ))}
                   </div>
-                </td>
-                <td className="p-4 border-b border-slate-200">
-                  {isAdded(supplement.id) ? (
-                    <button
-                      onClick={() => removeSupplement(supplement.id)}
-                      className="cursor-pointer text-xs font-medium px-2.5 py-0.5 rounded"
-                    >
-                      <i className="bi bi-dash-circle text-xl"></i>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => addSupplement(supplement.id)}
-                      className="cursor-pointer text-xs font-medium px-2.5 py-0.5 rounded"
-                    >
-                      <i className="bi bi-plus-circle text-xl"></i>
-                    </button>
+                  {supplement.warnings && supplement.warnings.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                      <h4 className="flex items-center text-amber-800 font-semibold mb-2">
+                        <i className="bi bi-exclamation-triangle-fill me-2 text-amber-500"></i> Warnings
+                      </h4>
+                      <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
+                        {supplement.warnings.map((warning, idx) => (
+                          <li key={idx}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

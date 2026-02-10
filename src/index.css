@@ -1,2 +1,96 @@
 @import "tailwindcss";
 @import "bootstrap-icons";
+
+:root {
+    --dusty-rose: #A67F8E;
+    --amethyst-smoke: #838CB4;
+    --plum: #d391c2;
+    --plum-transparent: #d391c285;
+    /* --examine: rgb(94, 61, 118);
+    --plum: #D899C8; */
+    --white-fc: #fcfcfc;
+    --eee: #eee;
+}
+
+.text-dusty-rose {
+    color: var(--dusty-rose);
+}
+
+.bg-dusty-rose {
+    background-color: var(--dusty-rose);
+}
+
+.text-amethyst-smoke {
+    color: var(--amethyst-smoke);
+}
+
+.bg-amethyst-smoke {
+    background-color: var(--amethyst-smoke);
+}
+
+.text-plum {
+    color: var(--plum);
+}
+
+.bg-plum {
+    background-color: var(--plum);
+}
+
+.bg-plum-transparent {
+    background-color: var(--plum-transparent);
+}
+
+.bg-eee {
+    background-color: var(--eee);
+}
+
+.text-white-fc {
+    color: var(--white-fc);
+}
+
+.bg-white-fc {
+    background-color: var(--white-fc);
+}
+
+.bg-eee {
+    background-color: var(--eee);
+}
+
+/* 
+.first-td,
+.second-td {
+    transition: all 0.2s ease-in-out;
+    transition-delay: 0.1s;
+}
+
+.table-body-row:hover .first-td,
+.table-body-row:hover .second-td {
+    transform: translateX(120px);
+} */
+
+/* text shadow */
+/* src/index.css */
+.text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.text-shadow-lg {
+    text-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.text-shadow-2xl {
+    text-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+/* Custom colors for shadows */
+.text-shadow-teal {
+    text-shadow: 3px 3px rgb(45, 212, 190);
+}
+
+.text-shadow-plum {
+    text-shadow: 0 4px 6px rgba(216, 153, 200, 0.4);
+}
