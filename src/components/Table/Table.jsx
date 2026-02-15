@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext, useMemo } from "react";
-import { motion } from 'motion/react';
+import { } from 'motion/react';
+import Card from 'src/components/Card/Card';
 import jsonSupplements from "public/supplements.json";
 import categoriesMapping from "public/categoriesMapping.json";
 import { MySupplementsContext } from "src/context/MySupplementsContext";
 import EvidenceBadge from "src/components/EvidenceBadge/EvidenceBadge";
 import Fuse from 'fuse.js';
 import { Link } from 'react-router';
+import { motion } from 'motion/react';
 
 function Table({ supplements = [], category = null, onClose = null }) {
   const { mySupplements, addSupplement, removeSupplement, isAdded } = useContext(MySupplementsContext);
@@ -136,7 +138,7 @@ function Table({ supplements = [], category = null, onClose = null }) {
         <motion.div
           initial={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
           animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.04 }}
           className={`hidden md:block p-6 border-2 border-zinc-500 rounded-2xl ${catData.bg} z-99 fixed top-1/2 left-1/2 w-[95vw] max-w-6xl max-h-[90vh] overflow-y-auto shadow-2xl bg-clip-border`}
         >
           <button
@@ -287,49 +289,17 @@ function Table({ supplements = [], category = null, onClose = null }) {
               />
             </div>
             <div className="md:hidden">
-              {results.map((supplement) => (
-                <div key={supplement.id} className="bg-white rounded-lg shadow-sm border border-slate-100 mb-4 p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">{supplement.name}</h3>
-                      <span className="inline-block px-2 py-1 text-xs font-semibold text-plum bg-purple-50 rounded-full mt-1">
-                        {supplement.category}
-                      </span>
-                    </div>
-                    <EvidenceBadge evidenceLevel={supplement.evidenceLevel} />
-                  </div>
-                  <p className="text-gray-600 text-sm mb-3">{supplement.description}</p>
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div className="bg-slate-50 p-2 rounded-lg">
-                      <p className="text-xs text-slate-500">Dosage</p>
-                      <p className="text-sm font-medium">{supplement.dosage}</p>
-                    </div>
-                    <div className="bg-slate-50 p-2 rounded-lg">
-                      <p className="text-xs text-slate-500">Timing</p>
-                      <p className="text-sm font-medium">{supplement.timing}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {supplement.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-600">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  {supplement.warnings && supplement.warnings.length > 0 && (
-                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
-                      <h4 className="flex items-center text-amber-800 font-semibold mb-2">
-                        <i className="bi bi-exclamation-triangle-fill me-2 text-amber-500"></i> Warnings
-                      </h4>
-                      <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
-                        {supplement.warnings.map((warning, idx) => (
-                          <li key={idx}>{warning}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
+              <div className="md:hidden">
+                {results.map((supplement) => (
+                  <Card
+                    key={supplement.id}
+                    supplement={supplement}
+                    isAdded={isAdded(supplement.id)}
+                    onToggle={isAdded(supplement.id) ? removeSupplement : addSupplement}
+                    variant="compact"
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </motion.div>
@@ -450,9 +420,9 @@ function Table({ supplements = [], category = null, onClose = null }) {
           {/* Top Bar with Filter Toggle and Search */}
           <div className="flex items-center gap-4 p-4 border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
             <button
-              hidden md:block onClick={() => setShowFilter(!showFilter)}
+              onClick={() => setShowFilter(!showFilter)}
               className={`
-                p-2 rounded-md transition-all duration-200 flex items-center gap-2
+                hidden md:flex p-2 rounded-md transition-all duration-200 items-center gap-2
                 ${showFilter ? 'bg-[var(--plum)] text-white shadow-md' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}
               `}
               title="Toggle Filters"
@@ -475,10 +445,10 @@ function Table({ supplements = [], category = null, onClose = null }) {
 
           {/* Scrollable Table Area */}
           <div className="flex-1 overflow-auto">
-            <table className="hidden md:table -full text-left border-collapse">
+            <table className="hidden md:table w-full text-left border-collapse">
               <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm shadow-sm">
                 <tr>
-                  <th className="p-4 border-b border-gray-200 w-16"></th> {/* Action column */}
+
                   <th onClick={() => sortSupplements('name')} className="p-4 border-b border-gray-200 cursor-pointer group hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-wider group-hover:text-[var(--plum)]">
                       Name
@@ -511,12 +481,8 @@ function Table({ supplements = [], category = null, onClose = null }) {
                 {results.map((supplement) => {
                   const catData = categoriesMapping[supplement.category] || categoriesMapping.default;
                   return isAdded(supplement.id) ? (
-                    <tr key={supplement.id} className="table-body-row cursor-pointer hover:bg-zinc-50 transition duration-300 -translate-x-30 ease-in-out">
-                      <td className="p-4 border-b border-slate-200 first-td">
-                        <p className="block text-sm text-slate-800 font-semibold">
-                          <a className="flex items-center justify-center w-20 h-10 rounded-md bg-red-500"> REMOVE </a>
-                        </p>
-                      </td>
+                    <tr key={supplement.id} className="table-body-row cursor-pointer hover:bg-zinc-50 transition duration-300 ease-in-out">
+
                       <td className="p-4 border-b border-slate-200 second-td">
                         <p className="block text-sm text-slate-800 font-semibold">
                           <Link className="" to={`/supplement/${supplement.id}`}>
@@ -543,12 +509,8 @@ function Table({ supplements = [], category = null, onClose = null }) {
                       </td>
                     </tr>
                   ) : (
-                    <tr key={supplement.id} className="table-body-row cursor-pointer hover:bg-plum transition duration-300 ease-in-out -translate-x-30">
-                      <td className="p-4 border-b border-slate-200 first-td">
-                        <p className="block text-sm text-slate-800 font-semibold">
-                          <a className="flex items-center justify-center w-20 h-10 rounded-md bg-teal-500"> ADD </a>
-                        </p>
-                      </td>
+                    <tr key={supplement.id} className="table-body-row cursor-pointer hover:bg-plum transition duration-300 ease-in-out">
+
                       <td className="p-4 border-b border-slate-200 second-td">
                         <p className="block text-sm text-slate-800 font-semibold">
                           <Link className="" to={`/supplement/${supplement.id}`}>
@@ -579,49 +541,17 @@ function Table({ supplements = [], category = null, onClose = null }) {
               </tbody>
             </table>
             <div className="md:hidden mx-5">
-              {results.map((supplement) => (
-                <div key={supplement.id} className="bg-white rounded-lg shadow-sm border border-slate-100 mb-4 p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 my-3">{supplement.name}</h3>
-                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-sm font-medium ring-1 ring-inset ring-black/10 ${categoriesMapping[supplement.category].bg} ${categoriesMapping[supplement.category].text}`}>
-                        <i className={`bi ${categoriesMapping[supplement.category].iconClass} mx-2`}></i> {supplement.category}
-                      </span>
-                    </div>
-                    <EvidenceBadge evidenceLevel={supplement.evidenceLevel} />
-                  </div>
-                  <p className="text-gray-600 text-sm mb-3">{supplement.description}</p>
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div className="bg-slate-50 p-2 rounded-lg">
-                      <p className="text-xs text-slate-500">Dosage</p>
-                      <p className="text-sm font-medium">{supplement.dosage}</p>
-                    </div>
-                    <div className="bg-slate-50 p-2 rounded-lg">
-                      <p className="text-xs text-slate-500">Timing</p>
-                      <p className="text-sm font-medium">{supplement.timing}</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {supplement.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs text-slate-600">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  {supplement.warnings && supplement.warnings.length > 0 && (
-                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
-                      <h4 className="flex items-center text-amber-800 font-semibold mb-2">
-                        <i className="bi bi-exclamation-triangle-fill me-2 text-amber-500"></i> Warnings
-                      </h4>
-                      <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
-                        {supplement.warnings.map((warning, idx) => (
-                          <li key={idx}>{warning}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))}
+              <div className="md:hidden mx-5">
+                {results.map((supplement) => (
+                  <Card
+                    key={supplement.id}
+                    supplement={supplement}
+                    isAdded={isAdded(supplement.id)}
+                    onToggle={isAdded(supplement.id) ? removeSupplement : addSupplement}
+                    variant="compact"
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -9,13 +9,13 @@ function Categories() {
   // const supplementsCategories = [...new Set(supplements.map(supplement => supplement.category))];
   const [category, setCategory] = useState(null);
   return (
-    <div className={`max-w-7xl min-h-screen`}>
-      <h1 className="md:text-6xl text-4xl font-bold text-center text-dark p-10">
+    <div className={`min-h-screen`}>
+      <h1 className="md:text-6xl  bg-eee text-4xl font-bold text-center text-dark p-10">
         <i className="bi bi-microsoft px-8 text-zinc-600 text-shadow-teal"></i>
         <span className="text-shadow-teal text-plum">Categories</span>
       </h1>
 
-      <div className="space-y-16 mx-5">
+      <div className="space-y-16 my-9 mx-5">
         {macroCategories.map((macro, macroIndex) => (
           <div key={macroIndex} className="animate-fade-in-up">
             {/* Macro Header */}

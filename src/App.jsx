@@ -13,8 +13,8 @@ function App() {
   return (
     <MySupplementsProvider>
       <Toaster richColors position="top-center" />
-      <Navbar />
       <BrowserRouter>
+        <Navbar />
         <Routes>
           <Route index element={<Home />} />
           <Route path="/categories" element={<Categories />} />
